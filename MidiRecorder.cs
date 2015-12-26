@@ -10,12 +10,6 @@ using System.IO;
 namespace SimpleMidiRecorder
 {
 
-    /* Todo
-     * 1. Convert this into a class of its own, possibly inheriting from BinaryWriter, make it MidiEventWriter or MidiTrackWriter to distinguish from MidiFileWriter
-     * 2. Track milliseconds so that delta time calculations are automatic
-     * 3. Create a MidiFileWriter class as the outer envelope
-     */
-
     /// <summary>
     /// Writes a MIDI sequence to a MIDI Type 0 file
     /// </summary>
@@ -455,7 +449,7 @@ namespace SimpleMidiRecorder
                     break;
 
                 case 0x0c: // Program change
-                    mtype = MessageType.Neutral;
+                    mtype = MessageType.Control;
                     break;
 
                 case 0x0d: // Channel Aftertouch
@@ -542,7 +536,7 @@ namespace SimpleMidiRecorder
         private void StartTrackRecording(UInt32 milliseconds)
         {
             Debug.Assert(mTrackWriter == null);
-            mTrackWriter = new MidiWriter(milliseconds);
+            mTrackWriter = new MidiWriter(milliseconds-100);    // Give a 100 millisecond gap between the metadata and the first note
 
             // Generate track name
             string trackName = (mTrack < TrackNames.Length) ? TrackNames[mTrack] : null;
@@ -564,9 +558,16 @@ namespace SimpleMidiRecorder
 
             // Write metadata
             mTrackWriter.WriteMidiText(0, MidiWriter.TextType.TrackName, trackName);
-            if (!String.IsNullOrEmpty(Artist)) mTrackWriter.WriteMidiText(0, MidiWriter.TextType.GenericText, Artist); // Convention seems to use the plain "Text" field for the artist name
+            if (!String.IsNullOrEmpty(Artist))
+            {
+                mTrackWriter.WriteMidiText(0, MidiWriter.TextType.GenericText, Artist); // Convention seems to use the plain "Text" field for the artist name
+            }
+            else if (!String.IsNullOrEmpty(Album))
+            {
+                mTrackWriter.WriteMidiText(0, MidiWriter.TextType.GenericText, Album);
+            }
             mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Title={0}}}", trackName));
-            if (!String.IsNullOrEmpty(Album)) mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Artist={0}}}", Artist));
+            if (!String.IsNullOrEmpty(Artist)) mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Artist={0}}}", Artist));
             if (!String.IsNullOrEmpty(Album)) mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Album={0}}}", Album));
             mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Track={0:d3}}}", mTrack+1));
             if (!String.IsNullOrEmpty(Genre)) mTrackWriter.WriteMidiText(0, MidiWriter.TextType.Lyric, string.Format("{{#Genre={0}}}", Genre));
