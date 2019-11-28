@@ -33,7 +33,7 @@ namespace SimpleMidiRecorder
     /// </summary>
     public partial class EnterTracks : Window
     {
-        const int maxTracks = 30;
+        const int maxTracks = 50;
         private List<Track> Tracks = new List<Track>();
 
         public EnterTracks()
